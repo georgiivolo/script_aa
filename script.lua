@@ -45,6 +45,16 @@ local KeySystem = {}
 KeySystem.KeyVerified = false
 
 local DiscordLink = "https://aldoaim.pythonanywhere.com/"
+local KeyTheme = {
+    Accent = Color3.fromRGB(0, 186, 255),
+    AccentSoft = Color3.fromRGB(0, 146, 214),
+    Background = Color3.fromRGB(18, 20, 26),
+    Surface = Color3.fromRGB(26, 28, 36),
+    Card = Color3.fromRGB(30, 32, 42),
+    Muted = Color3.fromRGB(60, 64, 76),
+    Text = Color3.fromRGB(235, 238, 245),
+    TextMuted = Color3.fromRGB(150, 155, 170)
+}
 
 function KeySystem:CreateUI()
     local KeyAuthScreenGui = Instance.new("ScreenGui")
@@ -53,35 +63,53 @@ function KeySystem:CreateUI()
     KeyAuthScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
     KeyAuthScreenGui.Parent = game:GetService("CoreGui")
 
+    local Shadow = Instance.new("Frame")
+    Shadow.Size = UDim2.new(0, 370, 0, 240)
+    Shadow.AnchorPoint = Vector2.new(0.5, 0.5)
+    Shadow.Position = UDim2.new(0.5, 0, 0.5, 6)
+    Shadow.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    Shadow.BorderSizePixel = 0
+    Shadow.BackgroundTransparency = 0.6
+    Shadow.Parent = KeyAuthScreenGui
+    Instance.new("UICorner", Shadow).CornerRadius = UDim.new(0, 14)
+
     local MainFrame = Instance.new("Frame")
     MainFrame.Size = UDim2.new(0, 350, 0, 220)
     MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
     MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
-    MainFrame.BackgroundColor3 = Color3.fromRGB(28, 28, 32)
+    MainFrame.BackgroundColor3 = KeyTheme.Card
     MainFrame.BorderSizePixel = 0
     MainFrame.Parent = KeyAuthScreenGui
-    Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
-    Instance.new("UIStroke", MainFrame).Color = Color3.fromRGB(80, 80, 85)
+    Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 12)
+    local mainStroke = Instance.new("UIStroke", MainFrame)
+    mainStroke.Color = KeyTheme.Muted
+    mainStroke.Thickness = 1.2
 
     local Title = Instance.new("TextLabel")
     Title.Size = UDim2.new(1, 0, 0, 40)
-    Title.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+    Title.BackgroundColor3 = KeyTheme.Surface
     Title.Text = "AldoAimV4 - Key Authentication"
     Title.Font = Enum.Font.GothamBold
     Title.TextSize = 16
-    Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Title.TextColor3 = KeyTheme.Text
     Title.Parent = MainFrame
-    local titleCorner = Instance.new("UICorner", Title); titleCorner.CornerRadius = UDim.new(0, 8)
+    local titleCorner = Instance.new("UICorner", Title); titleCorner.CornerRadius = UDim.new(0, 12)
+    local titleStroke = Instance.new("UIStroke", Title)
+    titleStroke.Color = KeyTheme.Muted
+    titleStroke.Thickness = 1
 
     local KeyInputHolder = Instance.new("Frame")
     KeyInputHolder.Size = UDim2.new(1, -40, 0, 35)
     KeyInputHolder.Position = UDim2.new(0.5, 0, 0.40, 0)
     KeyInputHolder.AnchorPoint = Vector2.new(0.5, 0.5)
-    KeyInputHolder.BackgroundColor3 = Color3.fromRGB(18, 18, 20)
+    KeyInputHolder.BackgroundColor3 = KeyTheme.Surface
     KeyInputHolder.BorderSizePixel = 0
     KeyInputHolder.ClipsDescendants = true
     KeyInputHolder.Parent = MainFrame
     Instance.new("UICorner", KeyInputHolder).CornerRadius = UDim.new(0, 6)
+    local keyStroke = Instance.new("UIStroke", KeyInputHolder)
+    keyStroke.Color = KeyTheme.Muted
+    keyStroke.Thickness = 1
 
     local KeyInputScroll = Instance.new("ScrollingFrame")
     KeyInputScroll.Size = UDim2.new(1, -8, 1, -4)
@@ -100,11 +128,12 @@ function KeySystem:CreateUI()
     KeyInput.PlaceholderText = "Paste key here"
     KeyInput.Font = Enum.Font.Gotham
     KeyInput.TextSize = 14
-    KeyInput.TextColor3 = Color3.fromRGB(220, 220, 220)
+    KeyInput.TextColor3 = KeyTheme.Text
     KeyInput.TextXAlignment = Enum.TextXAlignment.Left
     KeyInput.TextYAlignment = Enum.TextYAlignment.Center
     KeyInput.TextWrapped = false
     KeyInput.MultiLine = false
+    KeyInput.Text = ""
     KeyInput.Parent = KeyInputScroll
 
     local function updateKeyInputCanvas()
@@ -124,32 +153,43 @@ function KeySystem:CreateUI()
     StatusLabel.Text = ""
     StatusLabel.Font = Enum.Font.Gotham
     StatusLabel.TextSize = 14
-    StatusLabel.TextColor3 = Color3.fromRGB(255, 80, 80)
+    StatusLabel.TextColor3 = KeyTheme.TextMuted
     StatusLabel.Parent = MainFrame
 
     local SubmitButton = Instance.new("TextButton")
     SubmitButton.Size = UDim2.new(0.5, -30, 0, 40)
     SubmitButton.Position = UDim2.new(0.75, 0, 0.82, 0)
     SubmitButton.AnchorPoint = Vector2.new(0.5, 0.5)
-    SubmitButton.BackgroundColor3 = Color3.fromRGB(80, 160, 80)
+    SubmitButton.BackgroundColor3 = KeyTheme.Accent
     SubmitButton.Text = "Verify"
     SubmitButton.Font = Enum.Font.GothamBold
     SubmitButton.TextSize = 16
-    SubmitButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    SubmitButton.TextColor3 = KeyTheme.Text
     SubmitButton.Parent = MainFrame
-    Instance.new("UICorner", SubmitButton).CornerRadius = UDim.new(0, 6)
+    Instance.new("UICorner", SubmitButton).CornerRadius = UDim.new(0, 8)
+    local submitStroke = Instance.new("UIStroke", SubmitButton)
+    submitStroke.Color = KeyTheme.AccentSoft
 
     local GetKeyButton = Instance.new("TextButton")
     GetKeyButton.Size = UDim2.new(0.5, -30, 0, 40)
     GetKeyButton.Position = UDim2.new(0.25, 0, 0.82, 0)
     GetKeyButton.AnchorPoint = Vector2.new(0.5, 0.5)
-    GetKeyButton.BackgroundColor3 = Color3.fromRGB(80, 80, 160)
+    GetKeyButton.BackgroundColor3 = KeyTheme.Surface
     GetKeyButton.Text = "Create Key"
     GetKeyButton.Font = Enum.Font.GothamBold
     GetKeyButton.TextSize = 16
-    GetKeyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    GetKeyButton.TextColor3 = KeyTheme.Text
     GetKeyButton.Parent = MainFrame
-    Instance.new("UICorner", GetKeyButton).CornerRadius = UDim.new(0, 6)
+    Instance.new("UICorner", GetKeyButton).CornerRadius = UDim.new(0, 8)
+    local getStroke = Instance.new("UIStroke", GetKeyButton)
+    getStroke.Color = KeyTheme.Muted
+
+    local function applyHover(btn, baseColor, hoverColor)
+        btn.MouseEnter:Connect(function() btn.BackgroundColor3 = hoverColor end)
+        btn.MouseLeave:Connect(function() btn.BackgroundColor3 = baseColor end)
+    end
+    applyHover(SubmitButton, KeyTheme.Accent, KeyTheme.AccentSoft)
+    applyHover(GetKeyButton, KeyTheme.Surface, KeyTheme.Card)
 
     local LocalUsername = LocalPlayer and LocalPlayer.Name or "Unknown"
 
@@ -190,6 +230,7 @@ function KeySystem:CreateUI()
             (fluxus and fluxus.request) or request
 
         local responseBody
+        local responseStatus
         if httpRequest then
             local ok, response = pcall(function()
                 return httpRequest({
@@ -199,6 +240,7 @@ function KeySystem:CreateUI()
                 })
             end)
             if ok then
+                responseStatus = (response and (response.StatusCode or response.Status)) or responseStatus
                 responseBody = extractBody(response)
             end
         end
@@ -210,7 +252,10 @@ function KeySystem:CreateUI()
             if ok and body then responseBody = body end
         end
 
-        if not responseBody then
+        if not responseBody or (type(responseBody) == "string" and #responseBody == 0) then
+            if responseStatus and responseStatus >= 400 and responseStatus < 500 then
+                return false, "Invalid Key"
+            end
             return false, "Auth server unreachable"
         end
 
