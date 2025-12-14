@@ -1636,9 +1636,20 @@ if KeySystem.KeyVerified then
 
     local copyBtn = createButton(configCard, "Copy Config to Clipboard", 32)
     copyBtn.MouseButton1Click:Connect(function()
-        if not setclipboard then return end
         local ok, enc = pcall(serializeConfig)
-        if ok then pcall(function() setclipboard(enc) end) end
+        if not (ok and enc) then
+            copyBtn.Text = "Copy failed"
+            task.delay(1.5, function() copyBtn.Text = "Copy Config to Clipboard" end)
+            return
+        end
+
+        if setclipboard then
+            local success = pcall(function() setclipboard(enc) end)
+            copyBtn.Text = success and "Copied!" or "Copy failed"
+        else
+            copyBtn.Text = "Clipboard not available"
+        end
+        task.delay(1.5, function() copyBtn.Text = "Copy Config to Clipboard" end)
     end)
 
     local loadBtn = createButton(configCard, "Load Config from Textbox", 32)
