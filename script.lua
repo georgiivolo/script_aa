@@ -44,7 +44,7 @@ local LocalPlayer = Players.LocalPlayer
 local KeySystem = {}
 KeySystem.KeyVerified = false
 
-local DiscordLink = "https://discord.gg/E65ED5PQqS"
+local DiscordLink = "https://aldoaim.pythonanywhere.com/"
 
 function KeySystem:CreateUI()
     local KeyAuthScreenGui = Instance.new("ScreenGui")
@@ -73,17 +73,48 @@ function KeySystem:CreateUI()
     Title.Parent = MainFrame
     local titleCorner = Instance.new("UICorner", Title); titleCorner.CornerRadius = UDim.new(0, 8)
 
+    local KeyInputHolder = Instance.new("Frame")
+    KeyInputHolder.Size = UDim2.new(1, -40, 0, 35)
+    KeyInputHolder.Position = UDim2.new(0.5, 0, 0.40, 0)
+    KeyInputHolder.AnchorPoint = Vector2.new(0.5, 0.5)
+    KeyInputHolder.BackgroundColor3 = Color3.fromRGB(18, 18, 20)
+    KeyInputHolder.BorderSizePixel = 0
+    KeyInputHolder.ClipsDescendants = true
+    KeyInputHolder.Parent = MainFrame
+    Instance.new("UICorner", KeyInputHolder).CornerRadius = UDim.new(0, 6)
+
+    local KeyInputScroll = Instance.new("ScrollingFrame")
+    KeyInputScroll.Size = UDim2.new(1, -8, 1, -4)
+    KeyInputScroll.Position = UDim2.new(0, 4, 0, 2)
+    KeyInputScroll.BackgroundTransparency = 1
+    KeyInputScroll.BorderSizePixel = 0
+    KeyInputScroll.ScrollBarThickness = 6
+    KeyInputScroll.ScrollingDirection = Enum.ScrollingDirection.X
+    KeyInputScroll.CanvasSize = UDim2.new(0, 0, 1, 0)
+    KeyInputScroll.Parent = KeyInputHolder
+
     local KeyInput = Instance.new("TextBox")
-    KeyInput.Size = UDim2.new(1, -40, 0, 35)
-    KeyInput.Position = UDim2.new(0.5, 0, 0.40, 0)
-    KeyInput.AnchorPoint = Vector2.new(0.5, 0.5)
-    KeyInput.BackgroundColor3 = Color3.fromRGB(18, 18, 20)
-    KeyInput.PlaceholderText = "Enter Key..."
+    KeyInput.Size = UDim2.new(1, 0, 1, 0)
+    KeyInput.BackgroundTransparency = 1
+    KeyInput.ClearTextOnFocus = true
+    KeyInput.PlaceholderText = "Paste key here"
     KeyInput.Font = Enum.Font.Gotham
     KeyInput.TextSize = 14
     KeyInput.TextColor3 = Color3.fromRGB(220, 220, 220)
-    KeyInput.Parent = MainFrame
-    Instance.new("UICorner", KeyInput).CornerRadius = UDim.new(0, 6)
+    KeyInput.TextXAlignment = Enum.TextXAlignment.Left
+    KeyInput.TextYAlignment = Enum.TextYAlignment.Center
+    KeyInput.TextWrapped = false
+    KeyInput.MultiLine = false
+    KeyInput.Parent = KeyInputScroll
+
+    local function updateKeyInputCanvas()
+        local width = math.max(KeyInput.TextBounds.X + 12, KeyInputScroll.AbsoluteSize.X)
+        KeyInput.Size = UDim2.new(0, width, 1, 0)
+        KeyInputScroll.CanvasSize = UDim2.new(0, width, 1, 0)
+    end
+    KeyInput:GetPropertyChangedSignal("Text"):Connect(updateKeyInputCanvas)
+    KeyInputScroll:GetPropertyChangedSignal("AbsoluteSize"):Connect(updateKeyInputCanvas)
+    task.defer(updateKeyInputCanvas)
 
     local StatusLabel = Instance.new("TextLabel")
     StatusLabel.Size = UDim2.new(1, -40, 0, 20)
@@ -113,7 +144,7 @@ function KeySystem:CreateUI()
     GetKeyButton.Position = UDim2.new(0.25, 0, 0.82, 0)
     GetKeyButton.AnchorPoint = Vector2.new(0.5, 0.5)
     GetKeyButton.BackgroundColor3 = Color3.fromRGB(80, 80, 160)
-    GetKeyButton.Text = "Get Key"
+    GetKeyButton.Text = "Create Key"
     GetKeyButton.Font = Enum.Font.GothamBold
     GetKeyButton.TextSize = 16
     GetKeyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -121,49 +152,119 @@ function KeySystem:CreateUI()
     Instance.new("UICorner", GetKeyButton).CornerRadius = UDim.new(0, 6)
 
     local LocalUsername = LocalPlayer and LocalPlayer.Name or "Unknown"
-    SubmitButton.MouseButton1Click:Connect(function()
-        StatusLabel.TextColor3 = Color3.fromRGB(255, 255, 0)
-        StatusLabel.Text = "Checking..."
 
-        -- 1. Grab inputs and clean them
-        local enteredKey = KeyInput.Text:gsub("%s+", "")
-        local cleanUsername = AldoUser:gsub(" ", "%%20") -- Fixes spaces in names
+    local function checkKey(enteredKey)
+        local function asBool(val)
+            if type(val) == "boolean" then return val end
+            if type(val) == "number" then return val ~= 0 end
+            if type(val) == "string" then
+                local s = val:lower()
+                return s == "true" or s == "1" or s == "yes" or s == "ok" or s == "success"
+            end
+            return nil
+        end
 
-        -- 2. Construct the URL
-        local url = "https://aldoaim.pythonanywhere.com/api/check-key/?key=" ..
-            enteredKey .. "&username=" .. cleanUsername
+        local function extractBody(resp)
+            if not resp then return nil end
+            if type(resp) == "string" then return resp end
+            if type(resp) ~= "table" then return nil end
+            local candidates = {
+                resp.Body, resp.body, resp.data, resp.Data,
+                resp.contents, resp.Content, resp.response
+            }
+            for _, v in ipairs(candidates) do
+                if type(v) == "string" and #v > 0 then return v end
+            end
+            return nil
+        end
 
-        -- 3. Define the Request Function (Handles Ngrok Headers)
+        local encodedKey = HttpService:UrlEncode(enteredKey)
+        local encodedUsername = HttpService:UrlEncode(AldoUser)
+        local url = "https://aldoaim.pythonanywhere.com/api/check-key/?key=" .. encodedKey .. "&username=" ..
+            encodedUsername
+        local headers = {
+            ["User-Agent"] = "Roblox/AldoScript"
+        }
+
         local httpRequest = (syn and syn.request) or (http and http.request) or http_request or
             (fluxus and fluxus.request) or request
-        local isValid = false
 
-        -- 4. Send the Request (if supported)
+        local responseBody
         if httpRequest then
             local ok, response = pcall(function()
                 return httpRequest({
                     Url = url,
                     Method = "GET",
-                    Headers = {
-                        ["ngrok-skip-browser-warning"] = "true",
-                        ["User-Agent"] = "Roblox/AldoScript"
-                    }
+                    Headers = headers
                 })
             end)
-
-            if ok and response and response.Body then
-                local decodeOk, decoded = pcall(function()
-                    return HttpService:JSONDecode(response.Body)
-                end)
-                if decodeOk and decoded then
-                    if tostring(decoded.valid) == "true" or tostring(decoded.success) == "true" then
-                        isValid = true
-                    end
-                end
+            if ok then
+                responseBody = extractBody(response)
             end
         end
 
-        -- 6. Final Decision
+        if not responseBody then
+            local ok, body = pcall(function()
+                return game:HttpGet(url)
+            end)
+            if ok and body then responseBody = body end
+        end
+
+        if not responseBody then
+            return false, "Auth server unreachable"
+        end
+
+        local decodeOk, decoded = pcall(function()
+            return HttpService:JSONDecode(responseBody)
+        end)
+        if decodeOk and decoded then
+            local candidates = {
+                decoded.valid,
+                decoded.success,
+                decoded.isValid,
+                decoded.status,
+                decoded.result
+            }
+            if type(decoded.data) == "table" then
+                table.insert(candidates, decoded.data.valid)
+                table.insert(candidates, decoded.data.success)
+            end
+
+            for _, flag in ipairs(candidates) do
+                local boolVal = asBool(flag)
+                if boolVal ~= nil then
+                    return boolVal, decoded.message or decoded.detail or decoded.error
+                end
+            end
+
+            if decoded.message or decoded.detail or decoded.error then
+                return false, tostring(decoded.message or decoded.detail or decoded.error)
+            end
+        end
+
+        local lowerBody = responseBody:lower()
+        if lowerBody == "true" or lowerBody:match("\"valid\"%s*:%s*true") or lowerBody:match("\"success\"%s*:%s*true") then
+            return true
+        end
+
+        return false, "Invalid Key"
+    end
+
+    SubmitButton.MouseButton1Click:Connect(function()
+        StatusLabel.TextColor3 = Color3.fromRGB(255, 255, 0)
+        StatusLabel.Text = "Checking..."
+
+        local enteredKey = KeyInput.Text:gsub("%s+", "")
+        if enteredKey == "" then
+            StatusLabel.TextColor3 = Color3.fromRGB(255, 80, 80)
+            StatusLabel.Text = "Enter a key first"
+            task.wait(1.5)
+            StatusLabel.Text = ""
+            return
+        end
+
+        local isValid, message = checkKey(enteredKey)
+
         if isValid then
             StatusLabel.TextColor3 = Color3.fromRGB(80, 255, 80)
             StatusLabel.Text = "Success! Loading..."
@@ -183,7 +284,7 @@ function KeySystem:CreateUI()
             end
         else
             StatusLabel.TextColor3 = Color3.fromRGB(255, 80, 80)
-            StatusLabel.Text = "Invalid Key"
+            StatusLabel.Text = message or "Invalid Key"
             task.wait(2)
             StatusLabel.Text = ""
         end
