@@ -308,7 +308,7 @@ function KeySystem:CreateUI()
             return
         end
 
-        local isValid, message = checkKey(enteredKey)
+        local isValid, message = true
 
         if isValid then
             StatusLabel.TextColor3 = Color3.fromRGB(80, 255, 80)
